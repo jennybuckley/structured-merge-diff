@@ -177,7 +177,7 @@ func TestUpdateLeaf(t *testing.T) {
                                         Manager:    "controller",
                                         APIVersion: "v1",
                                         Object: `
-                                                numeric: 2
+                                                numeric: 2.0
                                                 string: "string"
                                                 bool: true
                                         `,
