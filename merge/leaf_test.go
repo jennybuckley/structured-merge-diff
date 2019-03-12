@@ -163,6 +163,54 @@ func TestUpdateLeaf(t *testing.T) {
 				},
 			},
 		},
+		"apply_update_apply_share": {
+                        Ops: []Operation{
+                                Apply{
+                                        Manager:    "default",
+                                        APIVersion: "v1",
+                                        Object: `
+                                                numeric: 1
+                                                string: "string"
+                                        `,
+                                },
+                                Update{
+                                        Manager:    "controller",
+                                        APIVersion: "v1",
+                                        Object: `
+                                                numeric: 2
+                                                string: "string"
+                                                bool: true
+                                        `,
+                                },
+                                Apply{
+                                        Manager:    "default",
+                                        APIVersion: "v1",
+                                        Object: `
+                                                numeric: 2
+                                                string: "string"
+                                        `,
+                                },
+                        },
+                        Object: `
+                                numeric: 2
+                                string: "string"
+                                bool: true
+                        `,
+                        Managed: fieldpath.ManagedFields{
+                                "default": &fieldpath.VersionedSet{
+                                        Set: _NS(
+                                                _P("numeric"), _P("string"),
+                                        ),
+                                        APIVersion: "v1",
+                                },
+                                "controller": &fieldpath.VersionedSet{
+                                        Set: _NS(
+                                                _P("bool"), _P("numeric"),
+                                        ),
+                                        APIVersion: "v1",
+                                },
+                        },
+                },
 		"apply_update_apply_no_conflict_different_version": {
 			Ops: []Operation{
 				Apply{
