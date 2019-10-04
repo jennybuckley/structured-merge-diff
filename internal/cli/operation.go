@@ -61,6 +61,7 @@ type fieldset struct {
 	operationBase
 
 	fileToUse string
+	version   string
 }
 
 func (f fieldset) Execute(w io.Writer) error {
@@ -78,7 +79,16 @@ func (f fieldset) Execute(w io.Writer) error {
 		return err
 	}
 
-	return c.Added.ToJSONStream(w)
+	switch f.version {
+	default:
+		// Return an error
+	case "v1":
+		return c.Added.ToJSONStream(w)
+	case "v2":
+		return c.Added.ToJSONStream_V2Experimental(w)
+	}
+
+	return fmt.Errorf("--fieldset-version is invalid: %v", f.version)
 }
 
 type listTypes struct {
