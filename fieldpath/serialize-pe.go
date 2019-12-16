@@ -293,14 +293,14 @@ func serializePathElementToStreamV2(stream value.Stream, pe PathElement, et v2En
 				stream.WriteRaw(",")
 			}
 			stream.WriteObjectField(kvPairs[i].Name)
-			kvPairs[i].Value.WriteJSONStream(stream)
+			value.WriteJSONStream(kvPairs[i].Value, stream)
 		}
 		stream.WriteObjectEnd()
 	case pe.Value != nil:
 		if err := emitV2Prefix(stream, vtValue, et); err != nil {
 			return err
 		}
-		pe.Value.WriteJSONStream(stream)
+		value.WriteJSONStream(*pe.Value, stream)
 	case pe.Index != nil:
 		if err := emitV2Prefix(stream, vtIndex, et); err != nil {
 			return err
