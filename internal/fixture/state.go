@@ -22,6 +22,7 @@ import (
 
 	"sigs.k8s.io/structured-merge-diff/v3/fieldpath"
 	"sigs.k8s.io/structured-merge-diff/v3/merge"
+	"sigs.k8s.io/structured-merge-diff/v3/schema"
 	"sigs.k8s.io/structured-merge-diff/v3/typed"
 	"sigs.k8s.io/structured-merge-diff/v3/value"
 )
@@ -190,6 +191,24 @@ func (dummyConverter) Convert(v *typed.TypedValue, version fieldpath.APIVersion)
 }
 
 func (dummyConverter) IsMissingVersionError(err error) bool {
+	return false
+}
+
+// versionConverter doesn't convert, it just returns the same exact object, but uses version as the type name.
+type versionConverter struct{}
+
+var _ merge.Converter = versionConverter{}
+
+// Convert returns the object given in input, not doing any conversion, but uses version as the type name.
+func (versionConverter) Convert(v *typed.TypedValue, version fieldpath.APIVersion) (*typed.TypedValue, error) {
+	if len(version) == 0 {
+		return nil, fmt.Errorf("cannot convert to invalid version: %q", version)
+	}
+	sv := string(version)
+	return typed.AsTypedUnvalidated(v.AsValue(), v.AsSchema(), schema.TypeRef{NamedType: &sv}), nil
+}
+
+func (versionConverter) IsMissingVersionError(err error) bool {
 	return false
 }
 
@@ -401,7 +420,11 @@ type TestCase struct {
 
 // Test runs the test-case using the given parser and a dummy converter.
 func (tc TestCase) Test(parser Parser) error {
-	return tc.TestWithConverter(parser, &dummyConverter{})
+	if _, ok := parser.(SameVersionParser); ok {
+		return tc.TestWithConverter(parser, &dummyConverter{})
+	} else {
+		return tc.TestWithConverter(parser, &versionConverter{})
+	}
 }
 
 // Bench runs the test-case using the given parser and a dummy converter, but

@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/structured-merge-diff/v3/typed"
 )
 
-var atomicListParser = func() typed.ParseableType {
+var atomicListParser = func() Parser {
 	parser, err := typed.NewParser(`types:
 - name: associative
   map:
@@ -63,12 +63,12 @@ var atomicListParser = func() typed.ParseableType {
 	if err != nil {
 		panic(err)
 	}
-	return parser.Type("type")
+	return parser
 }()
 
 func TestListsTopologyChange(t *testing.T) {
 	tests := map[string]TestCase{
-		"broken_atomic_doesnt_own_former_associative": {
+		"atomic_doesnt_own_former_associative": {
 			Ops: []Operation{
 				Update{
 					Manager: "one",
@@ -90,25 +90,16 @@ func TestListsTopologyChange(t *testing.T) {
 				},
 			},
 			Managed: fieldpath.ManagedFields{
-				"one": fieldpath.NewVersionedSet(
-					_NS(
-						_P("list"),
-					),
-					"associative",
-					false,
-				),
 				"other": fieldpath.NewVersionedSet(
 					_NS(
-						_P("list", _KBF("name", "b")),
-						_P("list", _KBF("name", "b"), "name"),
-						_P("list", _KBF("name", "b"), "value"),
+						_P("list"),
 					),
 					"atomic",
 					false,
 				),
 			},
 		},
-		"broken_associative_doesnt_own_former_atomic": {
+		"associative_doesnt_own_former_atomic": {
 			Ops: []Operation{
 				Update{
 					Manager: "one",
@@ -131,13 +122,6 @@ func TestListsTopologyChange(t *testing.T) {
 			},
 
 			Managed: fieldpath.ManagedFields{
-				"one": fieldpath.NewVersionedSet(
-					_NS(
-						_P("list"),
-					),
-					"atomic",
-					false,
-				),
 				"other": fieldpath.NewVersionedSet(
 					_NS(
 						_P("list", _KBF("name", "b")),
@@ -153,7 +137,7 @@ func TestListsTopologyChange(t *testing.T) {
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			if err := test.Test(associativeListParser); err != nil {
+			if err := test.Test(atomicListParser); err != nil {
 				t.Fatal(err)
 			}
 		})
